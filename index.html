@@ -162,6 +162,8 @@
   .modal-summary .r.tot{font-weight:800;border-top:1px solid var(--line);margin-top:6px;padding-top:8px;font-size:15px;}
   .sendbtn{width:100%;background:var(--ink);color:#fff;padding:15px;border-radius:9px;font-size:15.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;}
   .sendbtn:hover{background:#0f1830;}
+  .paynote{background:#FDF1F5;border:1.4px solid var(--raspberry);border-radius:8px;padding:12px 14px;font-size:13.5px;color:var(--charcoal);margin:-6px 0 15px;line-height:1.8;}
+  .paynote b{color:var(--raspberry-dark);}
   .modalclose{position:absolute;left:22px;top:22px;background:none;font-size:20px;color:var(--muted);}
   .modal{position:relative;}
   .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:14px 24px;border-radius:10px;font-size:14px;font-weight:600;z-index:100;opacity:0;pointer-events:none;transition:.3s;display:flex;align-items:center;gap:10px;}
@@ -288,6 +290,15 @@
       </div>
       <div class="field"><label>المدينة / الحي</label><input type="text" id="fCity" placeholder="مثلاً: مدينة نصر" required></div>
       <div class="field"><label>العنوان بالتفصيل</label><textarea id="fAddress" rows="3" placeholder="اسم الشارع، رقم العمارة، الدور، الشقة، وأي علامة مميزة" required></textarea></div>
+      <div class="field">
+        <label>طريقة الدفع</label>
+        <select id="fPayment" required>
+          <option value="الدفع عند الاستلام">الدفع عند الاستلام (كاش)</option>
+          <option value="فودافون كاش">فودافون كاش</option>
+          <option value="انستاباي">انستاباي (InstaPay)</option>
+        </select>
+      </div>
+      <div class="paynote" id="payNote" style="display:none;"></div>
       <div class="field"><label>ملاحظات (اختياري)</label><input type="text" id="fNotes" placeholder="مقاس معين، وقت مناسب للتوصيل..."></div>
       <div class="modal-summary" id="modalSummary"></div>
       <button type="submit" class="sendbtn">ابعت الطلب على واتساب</button>
@@ -319,6 +330,8 @@
 
 <script>
 const WHATSAPP_NUMBER = "201022720275";
+const VODAFONE_CASH_NUMBER = "01022720275";
+const INSTAPAY_HANDLE = "ziyadsgad@instapay";
 
 const governorates = ["القاهرة","الجيزة","الإسكندرية","الدقهلية","الشرقية","المنوفية","القليوبية","الغربية","البحيرة","كفر الشيخ","دمياط","بورسعيد","الإسماعيلية","السويس","شمال سيناء","جنوب سيناء","بني سويف","الفيوم","المنيا","أسيوط","سوهاج","قنا","الأقصر","أسوان","البحر الأحمر","الوادي الجديد","مطروح"];
 
@@ -540,6 +553,7 @@ function openCheckout(){
   document.getElementById('modalSummary').innerHTML = cart.map(c=>`
     <div class="r"><span>${c.name} (${c.size}) × ${c.qty}</span><span>${money(c.price*c.qty)}</span></div>
   `).join('') + `<div class="r tot"><span>الإجمالي</span><span>${money(cartTotal())}</span></div>`;
+  updatePayNote();
   document.getElementById('modalWrap').classList.add('open');
 }
 function closeCheckout(){
@@ -579,6 +593,22 @@ document.getElementById('waFooterLink').addEventListener('click', ()=>{
   window.open(`https://wa.me/${WHATSAPP_NUMBER}`, '_blank');
 });
 
+function updatePayNote(){
+  const method = document.getElementById('fPayment').value;
+  const note = document.getElementById('payNote');
+  if(method === 'فودافون كاش'){
+    note.style.display = 'block';
+    note.innerHTML = `حوّل قيمة الطلب على رقم فودافون كاش: <b>${VODAFONE_CASH_NUMBER}</b>، وابعت صورة التحويل على واتساب بعد إرسال الطلب.`;
+  }else if(method === 'انستاباي'){
+    note.style.display = 'block';
+    note.innerHTML = `حوّل قيمة الطلب عن طريق انستاباي على: <b>${INSTAPAY_HANDLE}</b>، وابعت صورة التحويل على واتساب بعد إرسال الطلب.`;
+  }else{
+    note.style.display = 'none';
+    note.innerHTML = '';
+  }
+}
+document.getElementById('fPayment').addEventListener('change', updatePayNote);
+
 document.getElementById('checkoutForm').addEventListener('submit', (e)=>{
   e.preventDefault();
   const name = document.getElementById('fName').value.trim();
@@ -586,6 +616,7 @@ document.getElementById('checkoutForm').addEventListener('submit', (e)=>{
   const gov = document.getElementById('fGov').value;
   const city = document.getElementById('fCity').value.trim();
   const address = document.getElementById('fAddress').value.trim();
+  const fPayment = document.getElementById('fPayment').value;
   const notes = document.getElementById('fNotes').value.trim();
 
   let msg = "طلب جديد من متجر نسيج\n";
@@ -601,6 +632,8 @@ document.getElementById('checkoutForm').addEventListener('submit', (e)=>{
   msg += `المحافظة: ${gov}\n`;
   msg += `المدينة/الحي: ${city}\n`;
   msg += `العنوان بالتفصيل: ${address}\n`;
+  msg += `طريقة الدفع: ${fPayment}\n`;
+  if(fPayment !== 'الدفع عند الاستلام') msg += "(هبعت صورة التحويل تباعًا)\n";
   if(notes) msg += `ملاحظات: ${notes}\n`;
 
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
@@ -613,6 +646,7 @@ document.getElementById('checkoutForm').addEventListener('submit', (e)=>{
   closeDrawer();
   showToast('تم تجهيز طلبك، أكمل الإرسال من واتساب');
   document.getElementById('checkoutForm').reset();
+  document.getElementById('payNote').style.display = 'none';
 });
 
 renderGovernorates();
