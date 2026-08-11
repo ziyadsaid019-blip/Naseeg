@@ -583,6 +583,8 @@ function loadCart(){
 document.getElementById('openCart').addEventListener('click', openDrawer);
 document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
 document.getElementById('overlay').addEventListener('click', ()=>{ closeDrawer(); closeCheckout(); closeProductModal(); });
+document.getElementById('modalWrap').addEventListener('click', (e)=>{ if(e.target.id==='modalWrap') closeCheckout(); });
+document.getElementById('pmodalWrap').addEventListener('click', (e)=>{ if(e.target.id==='pmodalWrap') closeProductModal(); });
 document.getElementById('openCheckout').addEventListener('click', openCheckout);
 document.getElementById('closeModal').addEventListener('click', closeCheckout);
 document.getElementById('closePmodal').addEventListener('click', closeProductModal);
